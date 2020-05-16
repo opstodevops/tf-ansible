@@ -134,7 +134,7 @@ resource "aws_instance" "web01" {
   instance_type          = "t2.micro"
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.allow_ssh.id]
-
+  
   connection {
     type        = "ssh"
     host        = self.public_ip
@@ -172,6 +172,17 @@ resource "aws_instance" "app01" {
   instance_type          = "t2.micro"
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.allow_rdp.id]
+  user_data = <<EOF
+<powershell>
+New-Item -Type File -Path $ENV:TEMP -Name winrmconfigtask
+$url = "https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1"
+$file = "$env:temp\ConfigureRemotingForAnsible.ps1"
+
+(New-Object -TypeName System.Net.WebClient).DownloadFile($url, $file)
+powershell.exe -ExecutionPolicy ByPass -File $file -Verbose
+
+</powershell>
+EOF
 
   connection {
     type        = "winrm"
@@ -209,18 +220,18 @@ resource "aws_instance" "db01" {
 # OUTPUT
 ##################################################################################
 
-output "web01_public_dns" {
-  value = aws_instance.web01.public_dns
+output "web01_public_ip" {
+  value = aws_instance.web01.public_ip
 }
 
-output "web02_public_dns" {
-  value = aws_instance.web02.public_dns
+output "web02_public_ip" {
+  value = aws_instance.web02.public_ip
 }
 
-output "app01_public_dns" {
-  value = aws_instance.app01.public_dns
+output "app01_public_ip" {
+  value = aws_instance.app01.public_ip
 }
 
-output "db01_public_dns" {
-  value = aws_instance.db01.public_dns
+output "db01_public_ip" {
+  value = aws_instance.db01.public_ip
 }
