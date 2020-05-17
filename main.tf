@@ -6,6 +6,8 @@ variable "aws_access_key" {}
 variable "aws_secret_key" {}
 variable "private_key_path" {}
 variable "key_name" {}
+variable "admin_username" {}
+variable "admin_password" {}
 variable "region" {
   default = "us-east-1"
 }
@@ -174,23 +176,35 @@ resource "aws_instance" "app01" {
   vpc_security_group_ids = [aws_security_group.allow_rdp.id]
   user_data = <<EOF
 <powershell>
-New-Item -Type File -Path $ENV:TEMP -Name winrmconfigtask
-$url = "https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1"
-$file = "$env:temp\ConfigureRemotingForAnsible.ps1"
-
-(New-Object -TypeName System.Net.WebClient).DownloadFile($url, $file)
-powershell.exe -ExecutionPolicy ByPass -File $file -Verbose
-
+  # Set Administrator password
+  $admin = [adsi]("WinNT://./administrator, user")
+  $admin.psbase.invoke("SetPassword", "${var.admin_password}")
+  # Configure WINRM for Ansible
+  $url = "https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1"
+  $file = "$env:temp\ConfigureRemotingForAnsible.ps1"
+  (New-Object -TypeName System.Net.WebClient).DownloadFile($url, $file)
+  powershell.exe -ExecutionPolicy ByPass -File $file -Verbose
 </powershell>
 EOF
 
   connection {
     type        = "winrm"
     host        = self.public_ip
-    user        = "Administrator"
-    private_key = file(var.private_key_path)
-
+    user        = var.admin_username
+    password    = var.admin_password
+    # private_key = file(var.private_key_path)
   }
+
+  # provisioner "file" {
+  #   source      = "./ConfigureRemotingForAnsible.ps1"
+  #   destination = "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\2\\"
+  # }
+
+  # provisioner "remote-exec" {
+  #   inline = [
+  #     "powershell -ExecutionPolicy Unrestricted -File C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\2\\ConfigureRemotingForAnsible.ps1 -Verbose"
+  #   ]
+  # }
 
   tags = {
     Name = "app01"
