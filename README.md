@@ -15,7 +15,12 @@ packer build \
 docker build --rm -t ansible:centos .
 docker container run --rm -it --name control -v "$(pwd)":/ansible -w /ansible --env "AWS_ACCESS_KEY_ID=YOUR ACCESS KEY" --env "AWS_SECRET_ACCESS_KEY=YOUR SECRET KEY" --env "AWS_REGION=us-east-1" ansible:centos
 ```
-
+### Configuring Docker container for using PEM key
+```
+chmod 600 YOUR_PEM.key
+exec ssh-agent bash
+ssh-add YOUR_PEM.key
+```
 ### Configure Ansible Inventory for WINRM connectivity
 ```
 [win]
@@ -27,4 +32,9 @@ ansible_user=Administrator
 ansible_password=SomeSecretPassword!!!
 ansible_connection=winrm
 ansible_winrm_server_cert_validation=ignore
+```
+### Ansible PING module use for Linux and Windows
+```
+ansible LINUX -m ping -u ec2-user
+ansible WINDOWS -m win_ping -u ec2-user
 ```
