@@ -48,11 +48,12 @@ data "aws_ami" "aws-linux" {
 
 data "aws_ami" "windows" {
   most_recent = true
-  owners = [ "amazon", "microsoft" ] 
+  # owners = [ "amazon", "microsoft" ] 
+  owners = [ "self" ]
 
   filter {
     name   = "name"
-    values = ["Windows_Server-2019-English-Core-Base*"]
+    values = ["WIN2019-CUSTOM-*"]
   }
 
   filter {
@@ -189,10 +190,11 @@ EOF
 
   connection {
     type        = "winrm"
+    insecure    = true
     host        = self.public_ip
     user        = var.admin_username
     password    = var.admin_password
-    # private_key = file(var.private_key_path)
+    private_key = file(var.private_key_path)
   }
 
   # provisioner "file" {
@@ -216,11 +218,25 @@ resource "aws_instance" "db01" {
   instance_type          = "t2.micro"
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.allow_rdp.id]
+  user_data = <<EOF
+<powershell>
+  # Set Administrator password
+  $admin = [adsi]("WinNT://./administrator, user")
+  $admin.psbase.invoke("SetPassword", "${var.admin_password}")
+  # Configure WINRM for Ansible
+  $url = "https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1"
+  $file = "$env:temp\ConfigureRemotingForAnsible.ps1"
+  (New-Object -TypeName System.Net.WebClient).DownloadFile($url, $file)
+  powershell.exe -ExecutionPolicy ByPass -File $file -Verbose
+</powershell>
+EOF
 
   connection {
     type        = "winrm"
+    insecure    = true
     host        = self.public_ip
-    user        = "Administrator"
+    user        = var.admin_username
+    password    = var.admin_password
     private_key = file(var.private_key_path)
 
   }
