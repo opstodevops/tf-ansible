@@ -170,7 +170,7 @@ resource "aws_instance" "web02" {
   }
 }
 
-resource "aws_instance" "app01" {
+resource "aws_instance" "dc01" {
   ami                    = data.aws_ami.windows.id
   instance_type          = "t2.micro"
   key_name               = var.key_name
@@ -209,7 +209,7 @@ EOF
   # }
 
   tags = {
-    Name = "app01"
+    Name = "dc01"
   }
 }
 
@@ -258,8 +258,8 @@ output "web02_public_ip" {
   value = aws_instance.web02.public_ip
 }
 
-output "app01_public_ip" {
-  value = aws_instance.app01.public_ip
+output "dc01_public_ip" {
+  value = aws_instance.dc01.public_ip
 }
 
 output "db01_public_ip" {
