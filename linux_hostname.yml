@@ -1,12 +1,13 @@
 ---
 - hosts: all
+  gather_facts: no
 
   tasks:
     - name: Change the hostname
       hostname:
         name="{{ inventory_hostname }}" # Magic Variable
       when:
-        ansible_fqdn != ansible_ssh_host
+        ansible_fqdn != ansible_host
 
     - name: restart machine
       command: shutdown -r now "Ansible initiated reboot"
