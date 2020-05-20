@@ -33,3 +33,6 @@ override.tf.json
 
 # Ignore pem files
 *.pem
+
+# Vault password file
+vault_pass.txt

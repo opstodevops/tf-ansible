@@ -1,0 +1,29 @@
+---
+  - hosts: dc01
+    gather_facts: no
+
+    vars:
+      safe_mode_password: !vault |
+            $ANSIBLE_VAULT;1.1;AES256
+            34393133343031356266373735306434363265396666393961393636333563653531623934303161
+            6166333037313038323137393738636130623838333262340a316165393664343866663062393564
+            37363137653233363564646339663035303237373038613335343563333563383564386433313463
+            3062623961393364650a663334396231663930353662313261616136366164323864663364613839
+            32353734323633656539303230373338636465393236386636356565626166366163
+      # ansible_connection: winrm
+      # ansible_winrm_transport: ntlm
+      # ansible_winrm_server_cert_validation: ignore  
+    
+    tasks:
+      - name: Create new Windows domain in a new forest with specific parameters
+        win_domain:
+          create_dns_delegation: no
+          database_path: C:\Windows\NTDS
+          dns_domain_name: opstodevops.tech
+          domain_mode: Win2012R2
+          domain_netbios_name: OPSTODEVOPS
+          forest_mode: Win2012R2
+          safe_mode_password: "{{ safe_mode_password }}"
+          sysvol_path: C:\Windows\SYSVOL
+        register: domain_install
+

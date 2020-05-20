@@ -24,17 +24,25 @@ ssh-add YOUR_PEM.key
 ### Configure Ansible Inventory for WINRM connectivity
 ```
 [win]
-172.16.2.5 
-172.16.2.6 
+win1 ansible_host=172.16.2.5 
+win2 ansible_host=172.16.2.6
 
 [win:vars]
 ansible_user=Administrator
 ansible_password=SomeSecretPassword!!!
 ansible_connection=winrm
+ansible_winrm_transport=ntlm
 ansible_winrm_server_cert_validation=ignore
 ```
 ### Ansible PING module use for Linux and Windows
 ```
 ansible LINUX -m ping -u ec2-user
 ansible WINDOWS -m win_ping -u ec2-user
+```
+### Ansible file and string encryption
+```
+ansible-vault encrypt_string --vault-password-file vault_pass.txt 'ClearTXTPassword' --name 'PASSWORD_VARIABLE'
+ansible-playbook playbook.yml --vault-password-file <vault_pass.txt>
+ansible-vault encrypt <playbook.yml>
+ansible-playbook --ask-vault-pass <playbook.yml>
 ```
