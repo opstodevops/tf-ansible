@@ -2,6 +2,13 @@
   - hosts: dc01
     gather_facts: no
 
+    # vars_prompt:
+    #   - name: username
+    #     prompt: "Enter local username"
+    #     private: no
+    #   - name: password
+    #     prompt: "Enter password"
+    
     vars:
       safe_mode_password: !vault |
             $ANSIBLE_VAULT;1.1;AES256
