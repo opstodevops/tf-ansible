@@ -1,0 +1,31 @@
+---
+  - hosts: localhost
+    gather_facts: no
+    
+    vars_prompt:
+      # - name: username
+      #   prompt: "Enter local username"
+      #   private: no
+      # - name: password
+      #   prompt: "Enter password"
+      - name: hostname
+        prompt: "Enter hostname"
+
+    # vars: # Configured in Ansible inventory
+    #   ansible_user: "{{ username }}"
+    #   ansible_password: "{{ password }}"
+    #   ansible_connection: winrm
+    #   ansible_winrm_transport: ntlm
+    #   ansible_winrm_server_cert_validation: ignore
+  
+    tasks:
+    - name: Change the hostname
+      win_hostname:
+        name: "{{ hostname }}"
+      register: res
+    - debug:
+        var: res
+
+    - name: Reboot
+      win_reboot:
+      when: res.reboot_required

@@ -213,6 +213,39 @@ EOF
   }
 }
 
+resource "aws_instance" "app01" {
+  ami                    = data.aws_ami.windows.id
+  instance_type          = "t2.micro"
+  key_name               = var.key_name
+  vpc_security_group_ids = [aws_security_group.allow_rdp.id]
+  user_data = <<EOF
+<powershell>
+  # Set Administrator password
+  $admin = [adsi]("WinNT://./administrator, user")
+  $admin.psbase.invoke("SetPassword", "${var.admin_password}")
+  # Configure WINRM for Ansible
+  $url = "https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1"
+  $file = "$env:temp\ConfigureRemotingForAnsible.ps1"
+  (New-Object -TypeName System.Net.WebClient).DownloadFile($url, $file)
+  powershell.exe -ExecutionPolicy ByPass -File $file -Verbose
+</powershell>
+EOF
+
+  connection {
+    type        = "winrm"
+    insecure    = true
+    host        = self.public_ip
+    user        = var.admin_username
+    password    = var.admin_password
+    private_key = file(var.private_key_path)
+
+  }
+
+  tags = {
+    Name = "app01"
+  }
+}
+
 resource "aws_instance" "db01" {
   ami                    = data.aws_ami.windows.id
   instance_type          = "t2.micro"
@@ -264,4 +297,8 @@ output "dc01_public_ip" {
 
 output "db01_public_ip" {
   value = aws_instance.db01.public_ip
+}
+
+output "app01_public_ip" {
+  value = aws_instance.app01.public_ip
 }
