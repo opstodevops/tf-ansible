@@ -35,4 +35,6 @@
           safe_mode_password: "{{ safe_mode_password }}"
           sysvol_path: C:\Windows\SYSVOL
         register: domain_install
+      - debug:
+          var: domain_install
 
