@@ -1,6 +1,6 @@
 ---
   - hosts: all
-    gather_facts: no
+    gather_facts: yes
     
     # vars_prompt:
     #   - name: username
@@ -19,28 +19,32 @@
     #   ansible_winrm_server_cert_validation: ignore
   
     tasks:
-    - name: Change the hostname
-      win_hostname:
-        # name: "{{ hostname }}"
-        name="{{ inventory_hostname }}" # Magic Variable
-      when:
-        ansible_fqdn != ansible_hostname
-      register: res
-    - debug:
-        var: res
+      - name: Change the hostname
+        win_hostname:
+          name="{{ inventory_hostname }}" # Magic Variable
+        # when:
+        #   ansible_fqdn != ansible_hostname
+        register: res
+      - debug:
+          var: res
 
-    - name: Reboot
-      win_reboot:
-      when: res.reboot_required
+      - name: Reboot
+        win_reboot:
+        when: res.reboot_required
+      
+      - name: Wait for {{ inventory_hostname }} to come back up
+        wait_for_connection:
+          delay: 60
+          timeout: 120
+        when: res.reboot_required
+      
+      # gathering the facts again for assertion task
+      - name: do facts module to get latest information
+        setup:
 
-    - name: Wait for {{ inventory_hostname }} to come back up
-      wait_for_connection:
-        delay: 60
-        timeout: 120
-    
-    - name: Validate ansible_fqdn == inventory_hostname
-      tags:
-        - validate
-      assert:
-        that:
-          ansible_fqdn == inventory_hostname
+      - name: Validate ansible_fqdn == inventory_hostname
+        tags:
+          - validate
+        assert:
+          that:
+            ansible_fqdn == "{{inventory_hostname}}"  
