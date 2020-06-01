@@ -26,13 +26,13 @@ provider "aws" {
 # DATA
 ##################################################################################
 
-data "aws_ami" "aws-linux" {
+data "aws_ami" "redhat-linux" {
   most_recent = true
-  owners      = ["amazon"]
+  owners      = ["309956199498"]
 
   filter {
     name   = "name"
-    values = ["amzn-ami-hvm*"]
+    values = ["RHEL-7.6_HVM_GA*"]
   }
 
   filter {
@@ -133,7 +133,7 @@ resource "aws_security_group" "allow_rdp" {
 }
 
 resource "aws_instance" "web01" {
-  ami                    = data.aws_ami.aws-linux.id
+  ami                    = data.aws_ami.redhat-linux.id
   instance_type          = "t2.micro"
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.allow_ssh.id]
@@ -152,7 +152,7 @@ resource "aws_instance" "web01" {
 }
 
 resource "aws_instance" "web02" {
-  ami                    = data.aws_ami.aws-linux.id
+  ami                    = data.aws_ami.redhat-linux.id
   instance_type          = "t2.micro"
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.allow_ssh.id]
@@ -172,7 +172,7 @@ resource "aws_instance" "web02" {
 
 resource "aws_instance" "dc01" {
   ami                    = data.aws_ami.windows.id
-  instance_type          = "t2.micro"
+  instance_type          = "t2.medium"
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.allow_rdp.id]
   user_data = <<EOF
@@ -215,7 +215,7 @@ EOF
 
 resource "aws_instance" "app01" {
   ami                    = data.aws_ami.windows.id
-  instance_type          = "t2.micro"
+  instance_type          = "t2.medium"
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.allow_rdp.id]
   user_data = <<EOF
@@ -248,7 +248,7 @@ EOF
 
 resource "aws_instance" "db01" {
   ami                    = data.aws_ami.windows.id
-  instance_type          = "t2.micro"
+  instance_type          = "t2.medium"
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.allow_rdp.id]
   user_data = <<EOF
