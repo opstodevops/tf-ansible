@@ -46,3 +46,9 @@ ansible-playbook playbook.yml --vault-password-file <vault_pass.txt>
 ansible-vault encrypt <playbook.yml>
 ansible-playbook --ask-vault-pass <playbook.yml>
 ```
+### Docker Build and RUN on Linux running in VMware Workstation
+```
+docker build --rm --network=host -t ansible:centos .
+
+docker container run --rm --network=host -it --name control -v "$(pwd)":/ansible -w /ansible -e "AWS_ACCESS_KEY_ID=YOUR ACCESS KEY" -e "AWS_SECRET_ACCESS_KEY=YOUR SECRET ACCESS KEY" -e "AWS_REGION=us-east-1" ansible:centos
+```
