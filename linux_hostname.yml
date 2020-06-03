@@ -8,6 +8,7 @@
         name="{{ inventory_hostname }}" # Magic Variable
       when:
         ansible_fqdn != ansible_host
+      become: yes
 
     - name: restart machine
       command: shutdown -r now "Ansible initiated reboot"
@@ -16,16 +17,12 @@
       ignore_errors: True
       when:
         reboot is defined
-      register: res
-    - debug:
-        var: res
-
+      become: yes
+      
     - name: Wait for {{ inventory_hostname }} to come back up
       wait_for_connection:
         delay: 60
         timeout: 120
-      # when:
-      #   res.reboot
         
     - name: Fix /etc/hosts removing the old hostname
       tags:
@@ -37,6 +34,10 @@
         regexp="^{{ ansible_default_ipv4.address }}"
       when:
         ansible_fqdn != inventory_hostname
+
+    # gathering the facts again for assertion task
+    - name: do facts module to get latest information
+      setup:  
 
     - name: Validate ansible_fqdn == inventory_hostname
       tags:

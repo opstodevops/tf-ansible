@@ -83,7 +83,6 @@ resource "tls_private_key" "tlsauth" {
 
 resource "aws_key_pair" "ec2key" {
   key_name   = var.key_name
-  # key_name   = "ansible-key"
   public_key = tls_private_key.tlsauth.public_key_openssh
   tags = {
     Name = "ansible-key"
@@ -93,7 +92,6 @@ resource "aws_key_pair" "ec2key" {
 resource "null_resource" "get_keys" {
 
   provisioner "local-exec" {
-    # command     = "echo '${tls_private_key.tlsauth.public_key_openssh}' > ./public-key.rsa"
     command     = "echo '${tls_private_key.tlsauth.public_key_openssh}' > ./ansible-public-key.rsa"
   }
 
