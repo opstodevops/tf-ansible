@@ -82,8 +82,8 @@ resource "tls_private_key" "tlsauth" {
 }
 
 resource "aws_key_pair" "ec2key" {
-  #key_name   = var.key_name
-  key_name   = "ansible-key"
+  key_name   = var.key_name
+  # key_name   = "ansible-key"
   public_key = tls_private_key.tlsauth.public_key_openssh
   tags = {
     Name = "ansible-key"
@@ -93,7 +93,7 @@ resource "aws_key_pair" "ec2key" {
 resource "null_resource" "get_keys" {
 
   provisioner "local-exec" {
-    command     = "echo '${tls_private_key.tlsauth.public_key_openssh}' > ./public-key.rsa"
+    # command     = "echo '${tls_private_key.tlsauth.public_key_openssh}' > ./public-key.rsa"
     command     = "echo '${tls_private_key.tlsauth.public_key_openssh}' > ./ansible-public-key.rsa"
   }
 
@@ -101,10 +101,10 @@ resource "null_resource" "get_keys" {
     command     = "echo '${tls_private_key.tlsauth.private_key_pem}' > ./ansible-key.pem"
   }
 
-}
+  provisioner "local-exec" {
+    command     = "chmod 600 ./ansible-key.pem"
+  }
 
-output "ec2key_name" {
-  value = aws_key_pair.ec2key.key_name
 }
 
 resource "aws_security_group" "allow_ssh" {
@@ -262,4 +262,8 @@ output "dc01_public_ip" {
 
 output "app01_public_ip" {
   value = aws_instance.app01.public_ip
+}
+
+output "ec2key_name" {
+  value = aws_key_pair.ec2key.key_name
 }
