@@ -16,11 +16,16 @@
       ignore_errors: True
       when:
         reboot is defined
+      register: res
+    - debug:
+        var: res
 
     - name: Wait for {{ inventory_hostname }} to come back up
       wait_for_connection:
         delay: 60
         timeout: 120
+      # when:
+      #   res.reboot
         
     - name: Fix /etc/hosts removing the old hostname
       tags:

@@ -93,7 +93,6 @@ resource "aws_key_pair" "ec2key" {
 resource "null_resource" "get_keys" {
 
   provisioner "local-exec" {
-    command     = "echo '${tls_private_key.tlsauth.public_key_openssh}' > ./public-key.rsa"
     command     = "echo '${tls_private_key.tlsauth.public_key_openssh}' > ./ansible-public-key.rsa"
   }
 
@@ -106,6 +105,7 @@ resource "null_resource" "get_keys" {
 output "ec2key_name" {
   value = aws_key_pair.ec2key.key_name
 }
+
 
 resource "aws_security_group" "allow_ssh" {
   name        = "tf_ssh_demo"
@@ -165,7 +165,7 @@ resource "aws_security_group" "allow_rdp" {
 
 resource "aws_instance" "web01" {
   ami                    = data.aws_ami.redhat-linux.id
-  instance_type          = "t2.medium"
+  instance_type          = "t2.micro"
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.allow_ssh.id]
   
@@ -179,6 +179,25 @@ resource "aws_instance" "web01" {
 
   tags = {
     Name = "web01"
+  }
+}
+
+resource "aws_instance" "web02" {
+  ami                    = data.aws_ami.redhat-linux.id
+  instance_type          = "t2.micro"
+  key_name               = var.key_name
+  vpc_security_group_ids = [aws_security_group.allow_ssh.id]
+
+  connection {
+    type        = "ssh"
+    host        = self.public_ip
+    user        = "ec2-user"
+    private_key = file(var.private_key_path)
+
+  }
+
+  tags = {
+    Name = "web02"
   }
 }
 
@@ -208,6 +227,17 @@ EOF
     password    = var.admin_password
     private_key = file(var.private_key_path)
   }
+
+  # provisioner "file" {
+  #   source      = "./ConfigureRemotingForAnsible.ps1"
+  #   destination = "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\2\\"
+  # }
+
+  # provisioner "remote-exec" {
+  #   inline = [
+  #     "powershell -ExecutionPolicy Unrestricted -File C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\2\\ConfigureRemotingForAnsible.ps1 -Verbose"
+  #   ]
+  # }
 
   tags = {
     Name = "dc01"
@@ -247,6 +277,38 @@ EOF
   }
 }
 
+resource "aws_instance" "db01" {
+  ami                    = data.aws_ami.windows.id
+  instance_type          = "t2.medium"
+  key_name               = var.key_name
+  vpc_security_group_ids = [aws_security_group.allow_rdp.id]
+  user_data = <<EOF
+<powershell>
+  # Set Administrator password
+  $admin = [adsi]("WinNT://./administrator, user")
+  $admin.psbase.invoke("SetPassword", "${var.admin_password}")
+  # Configure WINRM for Ansible
+  $url = "https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1"
+  $file = "$env:temp\ConfigureRemotingForAnsible.ps1"
+  (New-Object -TypeName System.Net.WebClient).DownloadFile($url, $file)
+  powershell.exe -ExecutionPolicy ByPass -File $file -Verbose
+</powershell>
+EOF
+
+  connection {
+    type        = "winrm"
+    insecure    = true
+    host        = self.public_ip
+    user        = var.admin_username
+    password    = var.admin_password
+    private_key = file(var.private_key_path)
+
+  }
+
+  tags = {
+    Name = "db01"
+  }
+}
 
 ##################################################################################
 # OUTPUT
@@ -256,8 +318,16 @@ output "web01_public_ip" {
   value = aws_instance.web01.public_ip
 }
 
+output "web02_public_ip" {
+  value = aws_instance.web02.public_ip
+}
+
 output "dc01_public_ip" {
   value = aws_instance.dc01.public_ip
+}
+
+output "db01_public_ip" {
+  value = aws_instance.db01.public_ip
 }
 
 output "app01_public_ip" {

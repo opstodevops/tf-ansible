@@ -47,4 +47,13 @@
           - validate
         assert:
           that:
-            ansible_fqdn == "{{inventory_hostname}}"  
+            ansible_fqdn == inventory_hostname
+      
+      # cleaning up Temp folder
+      - name: cleaning up Temp folder
+        # become: yes
+        win_shell: |
+          $tempFiles = Test-Path -Path C:\windows\temp
+          if ($tempFiles) {
+            Remove-Item -Path C:\Windows\temp\* -Recurse -Force
+          }
