@@ -9,34 +9,9 @@
       when:
         ansible_fqdn != ansible_host
       become: yes
-
-    - name: Uptime before reboot
-      shell: uptime
-      register: uptime_pre_reboot
+      register: res
     - debug:
-        msg: "{{ uptime_pre_reboot.stdout }}"
-
-    - name: restart machine
-      command: shutdown -r now "Ansible initiated reboot"
-      async: 0
-      poll: 0
-      ignore_errors: True
-      when:
-        reboot is defined
-      become: yes
-      
-    - name: Wait for {{ inventory_hostname }} to come back up
-      wait_for_connection:
-        delay: 60
-        timeout: 120
-      when:
-        reboot is defined
-        
-    - name: Uptime after reboot
-      shell: uptime
-      register: uptime_post_reboot
-    - debug:
-        msg: "{{ uptime_post_reboot.stdout }}"
+        var: res
 
     - name: Fix /etc/hosts removing the old hostname
       tags:
@@ -48,6 +23,28 @@
         regexp="^{{ ansible_default_ipv4.address }}"
       when:
         ansible_fqdn != inventory_hostname
+
+    - name: Uptime before reboot
+      shell: uptime
+      register: uptime_pre_reboot
+    - debug:
+        msg: "{{ uptime_pre_reboot.stdout }}"
+
+    - name: restart machine
+      reboot:
+      become: yes
+      register: res
+      
+    - name: Wait for {{ inventory_hostname }} to come back up
+      wait_for_connection:
+        delay: 60
+        timeout: 120
+        
+    - name: Uptime after reboot
+      shell: uptime
+      register: uptime_post_reboot
+    - debug:
+        msg: "{{ uptime_post_reboot.stdout }}"
 
     # gathering the facts again for assertion task
     - name: do facts module to get latest information
