@@ -1,30 +1,29 @@
 ---
-  - name: Rename Windows Server
+  - name: Configure Windows Server (renaming, cleanup, adding Ansible user)
     hosts: all
     gather_facts: yes
     
-    # vars_prompt:
-    #   - name: username
-    #     prompt: "Enter local username"
-    #     private: no
-    #   - name: password
-    #     prompt: "Enter password"
-    #   - name: hostname
-    #     prompt: "Enter hostname"
+    vars_prompt:
+      - name: username
+        prompt: "Enter local username"
+        private: no
+      - name: password
+        prompt: "Enter password"
+      # - name: hostname
+      #   prompt: "Enter hostname"
 
-    # vars: # Configured in Ansible inventory
-    #   ansible_user: "{{ username }}"
-    #   ansible_password: "{{ password }}"
-    #   ansible_connection: winrm
-    #   ansible_winrm_transport: ntlm
-    #   ansible_winrm_server_cert_validation: ignore
+    vars: # can be configured in Ansible inventory
+      ansible_user: "{{ username }}"
+      ansible_password: "{{ password }}"
+      ansible_connection: winrm
+      ansible_winrm_transport: ntlm
+      ansible_winrm_server_cert_validation: ignore
+      ansible_winrm_port: 5985
   
     tasks:
       - name: Change the hostname
         win_hostname:
           name="{{ inventory_hostname }}" # Magic Variable
-        # when:
-        #   ansible_fqdn != ansible_hostname
         register: res
       - debug:
           var: res
@@ -64,12 +63,20 @@
           that:
             ansible_fqdn == inventory_hostname
       
-      # cleaning up Temp folder
       - name: cleaning up Temp folder
         # become: yes
         win_shell: |
           $tempFiles = Test-Path -Path C:\windows\temp
           if ($tempFiles) {
-            Remove-Item -Path C:\Windows\temp\* -Recurse -Force
+            Remove-Item -Path C:\Windows\temp\*.ps1 -Recurse -Force
           }
         run_once: true
+
+      - name: adding Ansible local user
+        win_shell: |
+          $password = "{{ password }}" | ConvertTo-SecureString -AsPlainText -Force
+          New-LocalUser 'ansible' -Password $password
+          Add-LocalGroupMember -Group 'Administrators' -Member 'ansible'
+        register: user_add
+      - debug:
+          var: user_add
