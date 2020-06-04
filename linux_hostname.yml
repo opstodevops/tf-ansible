@@ -10,6 +10,12 @@
         ansible_fqdn != ansible_host
       become: yes
 
+    - name: Uptime before reboot
+      shell: uptime
+      register: uptime_pre_reboot
+    - debug:
+        msg: "{{ uptime_pre_reboot.stdout }}"
+
     - name: restart machine
       command: shutdown -r now "Ansible initiated reboot"
       async: 0
@@ -23,7 +29,15 @@
       wait_for_connection:
         delay: 60
         timeout: 120
+      when:
+        reboot is defined
         
+    - name: Uptime after reboot
+      shell: uptime
+      register: uptime_post_reboot
+    - debug:
+        msg: "{{ uptime_post_reboot.stdout }}"
+
     - name: Fix /etc/hosts removing the old hostname
       tags:
         - hosts

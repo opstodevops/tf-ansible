@@ -28,6 +28,13 @@
       - debug:
           var: res
 
+      - name: Uptime before reboot
+        win_shell: |
+          get-ciminstance win32_operatingsystem | select-object lastbootuptime
+        register: uptime_pre_reboot
+      - debug:
+          msg: "{{ uptime_pre_reboot.stdout_lines }}"
+
       - name: Reboot
         win_reboot:
         when: res.reboot_required
@@ -38,6 +45,13 @@
           timeout: 120
         when: res.reboot_required
       
+      - name: Uptime after reboot
+        win_shell: |
+          get-ciminstance win32_operatingsystem | select-object lastbootuptime
+        register: uptime_post_reboot
+      - debug:
+          msg: "{{ uptime_post_reboot.stdout_lines }}"
+
       # gathering the facts again for assertion task
       - name: do facts module to get latest information
         setup:
@@ -57,3 +71,4 @@
           if ($tempFiles) {
             Remove-Item -Path C:\Windows\temp\* -Recurse -Force
           }
+        run_once: true
