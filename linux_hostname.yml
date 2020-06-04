@@ -1,5 +1,6 @@
 ---
-- hosts: all
+- name: Rename Linux Server
+  hosts: all
   gather_facts: yes
 
   tasks:

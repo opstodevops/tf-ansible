@@ -1,5 +1,5 @@
 ---
-  - name: Create new Active-Directory Domain & Forest
+  - name: Create New Active-Directory Domain & Forest
     hosts: dc01
     gather_facts: no
 
@@ -34,7 +34,8 @@
     tasks:
       - name: Add host to Ansible inventory
         add_host:
-          name: '{{ inventory_hostname }}'
+          hostname: "{{ inventory_hostname }}"
+          # ansible_host: "{{ inventory_hostname }}"
           ansible_connection: winrm
           ansible_winrm_transport: ntlm
           ansible_winrm_server_cert_validation: ignore
@@ -74,7 +75,7 @@
           - Public
         tags: disable_firewall
       
-      - name: Install Active Directory
+      - name: Install Active Directory domain services
         win_feature:
           name: AD-Domain-Services
           include_management_tools: yes
@@ -84,7 +85,7 @@
       - debug:
           msg: "{{ domain_role }}"
       
-      - name: Create Domain
+      - name: Create new Windows domain in a new forest with specific parameters
         win_domain:
           create_dns_delegation: no
           database_path: C:\Windows\NTDS
@@ -98,7 +99,7 @@
       
       - name: reboot server
         win_reboot:
-          msg: "Installing AD. Rebooting..."
+          msg: "Installing Active Directory & Promoting to DC. Rebooting..."
           pre_reboot_delay: 15
         when: ad.changed
       

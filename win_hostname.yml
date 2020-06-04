@@ -1,5 +1,6 @@
 ---
-  - hosts: all
+  - name: Rename Windows Server
+    hosts: all
     gather_facts: yes
     
     # vars_prompt:
