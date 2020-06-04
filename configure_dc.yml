@@ -38,3 +38,7 @@
       - debug:
           var: domain_install
 
+      - name: Reboot
+        win_reboot:
+        when: domain_install.reboot_required
+
