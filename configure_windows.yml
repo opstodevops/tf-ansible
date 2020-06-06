@@ -1,0 +1,87 @@
+---
+  - name: Configure Windows Server (renaming, cleanup, adding Ansible user)
+    hosts: all
+    gather_facts: yes
+    
+    vars_prompt: # Look into secrets management
+      - name: username
+        prompt: "Enter local username"
+        private: no
+      - name: password
+        prompt: "Enter password"
+      # - name: hostname
+      #   prompt: "Enter hostname"
+      #   private: no
+      
+    vars: # can be configured in Ansible inventory
+      ansible_user: "{{ username }}"
+      ansible_password: "{{ password }}"
+      ansible_connection: winrm
+      ansible_winrm_transport: ntlm
+      ansible_winrm_server_cert_validation: ignore
+      ansible_winrm_port: 5985
+      
+    tasks:
+      - name: Change the hostname
+        win_hostname:
+          name="{{ inventory_hostname }}" # Magic Variable
+        register: res
+      - debug:
+          var: res
+
+      - name: Uptime before reboot
+        win_shell: |
+          get-ciminstance win32_operatingsystem | select-object lastbootuptime
+        register: uptime_pre_reboot
+      - debug:
+          msg: "{{ uptime_pre_reboot.stdout_lines }}"
+
+      - name: Reboot
+        win_reboot:
+        when: res.reboot_required
+      
+      - name: Wait for {{ inventory_hostname }} to come back up
+        wait_for_connection:
+          delay: 60
+          timeout: 120
+        when: res.reboot_required
+      
+      - name: Uptime after reboot
+        win_shell: |
+          get-ciminstance win32_operatingsystem | select-object lastbootuptime
+        register: uptime_post_reboot
+      - debug:
+          msg: "{{ uptime_post_reboot.stdout_lines }}"
+
+      # gathering the facts again for assertion task
+      - name: do facts module to get latest information
+        setup:
+
+      - name: Validate ansible_fqdn == inventory_hostname
+        tags:
+          - validate
+        assert:
+          that:
+            ansible_fqdn == inventory_hostname
+      
+      - name: cleaning up Temp folder
+        win_shell: |
+          $tempFiles = Test-Path -Path C:\windows\temp
+          if ($tempFiles) {
+            Remove-Item -Path C:\Windows\temp\*.ps1 -Recurse -Force
+          }
+        run_once: true
+        # become: yes
+
+      # Have to keep username static to make sure Ansible is the local username
+      # Look into getting an Ansible service account
+      - name: adding Ansible local user
+        win_user:
+          name: ansible
+          password: "{{ password }}"
+          state: present
+          groups:
+            - Administrators
+        register: user_add
+      - debug:
+          var: user_add

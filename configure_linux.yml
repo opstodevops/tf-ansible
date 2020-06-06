@@ -1,0 +1,97 @@
+---
+- name: Configure Linux Server (renaming, cleanup, adding Ansible user)
+  hosts: all
+  gather_facts: yes
+
+  tasks:
+    - pause:
+        prompt: "Enter password"
+        echo: no
+      when: password is undefined
+      register: password_input
+
+    - set_fact:
+        password: "{{ password_input.user_input }}"
+      when: password is undefined
+
+    - name: Change the hostname
+      hostname:
+        name="{{ inventory_hostname }}" # Magic Variable
+      when:
+        ansible_fqdn != ansible_host
+      become: yes
+      register: res
+    - debug:
+        var: res
+
+    - name: Fix /etc/hosts removing the old hostname
+      tags:
+        - hosts
+      lineinfile:
+        state=present
+        dest=/etc/hosts
+        line="{{ ansible_default_ipv4.address }} {{ inventory_hostname }} {{ ansible_hostname }}"
+        regexp="^{{ ansible_default_ipv4.address }}"
+      when:
+        ansible_fqdn != inventory_hostname
+
+    - name: Uptime before reboot
+      shell: uptime
+      register: uptime_pre_reboot
+    - debug:
+        msg: "{{ uptime_pre_reboot.stdout }}"
+
+    - name: restart machine
+      reboot:
+      become: yes
+      register: res
+      when: res.changed
+      
+    - name: Wait for {{ inventory_hostname }} to come back up
+      wait_for_connection:
+        delay: 60
+        timeout: 120
+      when: res.changed
+        
+    - name: Uptime after reboot
+      shell: uptime
+      register: uptime_post_reboot
+    - debug:
+        msg: "{{ uptime_post_reboot.stdout }}"
+
+    # gathering the facts again for assertion task
+    - name: do facts module to get latest information
+      setup:  
+
+    - name: Validate ansible_fqdn == inventory_hostname
+      tags:
+        - validate
+      assert:
+        that:
+          ansible_fqdn == inventory_hostname
+    
+    - name: Make sure we have a 'wheel' group
+      group:
+        name: wheel
+        state: present
+
+    - name: Allow 'wheel' group to have passwordless sudo
+      lineinfile:
+        dest: /etc/sudoers
+        state: present
+        regexp: '^%wheel'
+        line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+        validate: '/usr/sbin/visudo -cf %s'
+      become: yes
+
+    - name: Add sudoers user Ansible to wheel group
+      user: 
+        name: ansible 
+        password: "{{ password | password_hash('sha512') }}"
+        groups: wheel 
+        append: yes 
+        state: present 
+        createhome: yes
+      become: yes
+
+    
