@@ -3,7 +3,7 @@
     hosts: all
     gather_facts: yes
     
-    vars_prompt:
+    vars_prompt: # Look into secrets management
       - name: username
         prompt: "Enter local username"
         private: no
@@ -11,7 +11,8 @@
         prompt: "Enter password"
       # - name: hostname
       #   prompt: "Enter hostname"
-
+      #   private: no
+      
     vars: # can be configured in Ansible inventory
       ansible_user: "{{ username }}"
       ansible_password: "{{ password }}"
@@ -19,7 +20,7 @@
       ansible_winrm_transport: ntlm
       ansible_winrm_server_cert_validation: ignore
       ansible_winrm_port: 5985
-  
+      
     tasks:
       - name: Change the hostname
         win_hostname:
@@ -64,19 +65,23 @@
             ansible_fqdn == inventory_hostname
       
       - name: cleaning up Temp folder
-        # become: yes
         win_shell: |
           $tempFiles = Test-Path -Path C:\windows\temp
           if ($tempFiles) {
             Remove-Item -Path C:\Windows\temp\*.ps1 -Recurse -Force
           }
         run_once: true
+        # become: yes
 
+      # Have to keep username static to make sure Ansible is the local username
+      # Look into getting an Ansible service account
       - name: adding Ansible local user
-        win_shell: |
-          $password = "{{ password }}" | ConvertTo-SecureString -AsPlainText -Force
-          New-LocalUser 'ansible' -Password $password
-          Add-LocalGroupMember -Group 'Administrators' -Member 'ansible'
+        win_user:
+          name: ansible
+          password: "{{ password }}"
+          state: present
+          groups:
+            - Administrators
         register: user_add
       - debug:
           var: user_add

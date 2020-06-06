@@ -1,6 +1,6 @@
 ---
   - name: Create New Active-Directory Domain & Forest
-    hosts: dc01
+    hosts: all
     gather_facts: no
 
     vars_prompt:

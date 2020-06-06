@@ -1,9 +1,19 @@
 ---
-- name: Rename Linux Server
+- name: Configure Linux Server (renaming, cleanup, adding Ansible user)
   hosts: all
   gather_facts: yes
 
   tasks:
+    - pause:
+        prompt: "Enter password"
+        echo: no
+      when: password is undefined
+      register: password_input
+
+    - set_fact:
+        password: "{{ password_input.user_input }}"
+      when: password is undefined
+
     - name: Change the hostname
       hostname:
         name="{{ inventory_hostname }}" # Magic Variable
@@ -35,11 +45,13 @@
       reboot:
       become: yes
       register: res
+      when: res.changed
       
     - name: Wait for {{ inventory_hostname }} to come back up
       wait_for_connection:
         delay: 60
         timeout: 120
+      when: res.changed
         
     - name: Uptime after reboot
       shell: uptime
@@ -57,3 +69,29 @@
       assert:
         that:
           ansible_fqdn == inventory_hostname
+    
+    - name: Make sure we have a 'wheel' group
+      group:
+        name: wheel
+        state: present
+
+    - name: Allow 'wheel' group to have passwordless sudo
+      lineinfile:
+        dest: /etc/sudoers
+        state: present
+        regexp: '^%wheel'
+        line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+        validate: '/usr/sbin/visudo -cf %s'
+      become: yes
+
+    - name: Add sudoers user Ansible to wheel group
+      user: 
+        name: ansible 
+        password: "{{ password | password_hash('sha512') }}"
+        groups: wheel 
+        append: yes 
+        state: present 
+        createhome: yes
+      become: yes
+
+    

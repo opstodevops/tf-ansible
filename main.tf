@@ -217,6 +217,7 @@ resource "aws_instance" "app01" {
   instance_type          = "t2.medium"
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.allow_rdp.id]
+  iam_instance_profile   = aws_iam_instance_profile.customssmprofile.name
   user_data = <<EOF
 <powershell>
   # Set Administrator password
@@ -227,6 +228,11 @@ resource "aws_instance" "app01" {
   $file = "$env:temp\ConfigureRemotingForAnsible.ps1"
   (New-Object -TypeName System.Net.WebClient).DownloadFile($url, $file)
   powershell.exe -ExecutionPolicy ByPass -File $file -Verbose
+  # Install SSM Plugin
+  Invoke-WebRequest https://s3.amazonaws.com/session-manager-downloads/plugin/latest/windows/SessionManagerPluginSetup.exe -Out $env:USERPROFILE\Desktop\SSMPluginSetup.exe
+  Start-Process -FilePath $env:USERPROFILE\Desktop\SSMPluginSetup.exe -ArgumentList "/S" -NoNewWindow -Wait
+  Remove-Item -Force $env:USERPROFILE\Desktop\SSMPluginSetup.exe
+  $ENV:Path += "C:\Program Files\Amazon\SessionManagerPlugin\bin\"
 </powershell>
 EOF
 
@@ -244,6 +250,64 @@ EOF
     Name = "app01"
   }
 }
+
+resource "aws_iam_instance_profile" "customssmprofile" {
+  name = "customssmprofile"
+  role = aws_iam_role.customssmrole.name
+}
+
+resource "aws_iam_role" "customssmrole" {
+  name = "customssmrole"
+  path = "/"
+
+  assume_role_policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": "sts:AssumeRole",
+            "Principal": {
+               "Service": "ec2.amazonaws.com"
+            },
+            "Effect": "Allow",
+            "Sid": ""
+        }
+    ]
+}
+EOF
+tags = {
+      Environment = "dev"
+  }
+}
+
+data "aws_iam_policy" "awsssmmanagedinstancecore" {
+  arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+resource "aws_iam_role_policy_attachment" "awsssmmanaged-policy-attach" {
+  role       = aws_iam_role.customssmrole.name
+  policy_arn = data.aws_iam_policy.awsssmmanagedinstancecore.arn
+}
+
+# resource "aws_iam_role_policy" "customssmpolicy" {
+#   name = "customssmpolicy"
+#   role = "${aws_iam_role.customssmrole.id}"
+
+#   policy = <<EOF
+# {
+#   "Version": "2012-10-17",
+#   "Statement": [
+#     {
+#       "Action": [
+#         "s3:*"
+#       ],
+#       "Effect": "Allow",
+#       "Resource": "*"
+#     }
+#   ]
+# }
+# EOF
+# }
 
 
 ##################################################################################
