@@ -1,14 +1,15 @@
 # tf-ansible
 Code repository for Terraform and Ansible project
 
-### Packer Build
+### Packer Build Windows
 ```
 packer validate windows_ami_packer.json
-packer build example.json
+packer build windows_ami_packer.json
+PACKER_LOG=1 packer build windows_ami_packer.json 
 packer build \
     -var 'aws_access_key=YOUR ACCESS KEY' \
     -var 'aws_secret_key=YOUR SECRET KEY' \
-    example.json
+    windows_ami_packer.json
 ```
 ### Running Docker with Ansible and AWS tools
 ```
