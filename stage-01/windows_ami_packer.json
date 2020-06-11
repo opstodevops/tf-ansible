@@ -32,12 +32,12 @@
             },
             "ami_name": "WIN2019-CUSTOM-{{timestamp}}",
             "instance_type": "{{user `instance_size`}}",
-            "user_data_file": "./ConfigureRemoting.txt",
+            "user_data_file": "./bootstrap_win.txt",
             "associate_public_ip_address": true,
             "communicator": "winrm",
             "winrm_username": "{{user `winrm_username`}}",
             "winrm_port": 5986,
-            "winrm_timeout": "15m",
+            "winrm_timeout": "5m",
             "winrm_use_ssl": true,
             "winrm_insecure": true
             

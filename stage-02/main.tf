@@ -191,10 +191,10 @@ resource "aws_instance" "dc01" {
   $admin = [adsi]("WinNT://./administrator, user")
   $admin.psbase.invoke("SetPassword", "${var.admin_password}")
   # Configure WINRM for Ansible
-  $url = "https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1"
-  $file = "$env:temp\ConfigureRemotingForAnsible.ps1"
-  (New-Object -TypeName System.Net.WebClient).DownloadFile($url, $file)
-  powershell.exe -ExecutionPolicy ByPass -File $file -Verbose
+  # $url = "https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1"
+  # $file = "$env:temp\ConfigureRemotingForAnsible.ps1"
+  # (New-Object -TypeName System.Net.WebClient).DownloadFile($url, $file)
+  # powershell.exe -ExecutionPolicy ByPass -File $file -Verbose
 </powershell>
 EOF
 
@@ -224,10 +224,10 @@ resource "aws_instance" "app01" {
   $admin = [adsi]("WinNT://./administrator, user")
   $admin.psbase.invoke("SetPassword", "${var.admin_password}")
   # Configure WINRM for Ansible
-  $url = "https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1"
-  $file = "$env:temp\ConfigureRemotingForAnsible.ps1"
-  (New-Object -TypeName System.Net.WebClient).DownloadFile($url, $file)
-  powershell.exe -ExecutionPolicy ByPass -File $file -Verbose
+  # $url = "https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1"
+  # $file = "$env:temp\ConfigureRemotingForAnsible.ps1"
+  # (New-Object -TypeName System.Net.WebClient).DownloadFile($url, $file)
+  # powershell.exe -ExecutionPolicy ByPass -File $file -Verbose
   # Install SSM Plugin
   Invoke-WebRequest https://s3.amazonaws.com/session-manager-downloads/plugin/latest/windows/SessionManagerPluginSetup.exe -Out $env:USERPROFILE\Desktop\SSMPluginSetup.exe
   Start-Process -FilePath $env:USERPROFILE\Desktop\SSMPluginSetup.exe -ArgumentList "/S" -NoNewWindow -Wait
@@ -238,6 +238,8 @@ EOF
 
   connection {
     type        = "winrm"
+    port        = 5986
+    https       = true
     insecure    = true
     host        = self.public_ip
     user        = var.admin_username
