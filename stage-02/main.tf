@@ -49,7 +49,7 @@ data "aws_ami" "redhat-linux" {
 data "aws_ami" "windows" {
   most_recent = true
   # owners = [ "amazon", "microsoft" ] 
-  owners = [ "self" ]
+  owners = ["self"]
 
   filter {
     name   = "name"
@@ -185,21 +185,19 @@ resource "aws_instance" "dc01" {
   instance_type          = "t2.medium"
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.allow_rdp.id]
+  iam_instance_profile   = aws_iam_instance_profile.customssmprofile.name
   user_data = <<EOF
 <powershell>
   # Set Administrator password
   $admin = [adsi]("WinNT://./administrator, user")
   $admin.psbase.invoke("SetPassword", "${var.admin_password}")
-  # Configure WINRM for Ansible
-  # $url = "https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1"
-  # $file = "$env:temp\ConfigureRemotingForAnsible.ps1"
-  # (New-Object -TypeName System.Net.WebClient).DownloadFile($url, $file)
-  # powershell.exe -ExecutionPolicy ByPass -File $file -Verbose
 </powershell>
 EOF
 
   connection {
     type        = "winrm"
+    port        = 5986
+    https       = true
     insecure    = true
     host        = self.public_ip
     user        = var.admin_username
@@ -223,11 +221,6 @@ resource "aws_instance" "app01" {
   # Set Administrator password
   $admin = [adsi]("WinNT://./administrator, user")
   $admin.psbase.invoke("SetPassword", "${var.admin_password}")
-  # Configure WINRM for Ansible
-  # $url = "https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1"
-  # $file = "$env:temp\ConfigureRemotingForAnsible.ps1"
-  # (New-Object -TypeName System.Net.WebClient).DownloadFile($url, $file)
-  # powershell.exe -ExecutionPolicy ByPass -File $file -Verbose
   # Install SSM Plugin
   Invoke-WebRequest https://s3.amazonaws.com/session-manager-downloads/plugin/latest/windows/SessionManagerPluginSetup.exe -Out $env:USERPROFILE\Desktop\SSMPluginSetup.exe
   Start-Process -FilePath $env:USERPROFILE\Desktop\SSMPluginSetup.exe -ArgumentList "/S" -NoNewWindow -Wait

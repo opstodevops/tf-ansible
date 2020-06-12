@@ -1,0 +1,1 @@
+Remove-Item -Path C:\Windows\temp\UserScript.ps1 -Force
