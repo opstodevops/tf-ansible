@@ -3,19 +3,20 @@
     hosts: all
     gather_facts: no
     
-    # vars_prompt:
-    #   - name: username
-    #     prompt: "Enter local username"
-    #     private: no
-    #   - name: password
-    #     prompt: "Enter password"
+    vars_prompt:
+      - name: username
+        prompt: "Enter local username"
+        private: no
+      - name: password
+        prompt: "Enter password"
 
-    # vars: # Configured in Ansible inventory
-    #   ansible_user: "{{ username }}"
-    #   ansible_password: "{{ password }}"
-    #   ansible_connection: winrm
-    #   ansible_winrm_transport: ntlm
-    #   ansible_winrm_server_cert_validation: ignore
+    vars: # Configured in Ansible inventory
+      ansible_user: "{{ username }}"
+      ansible_password: "{{ password }}"
+      ansible_connection: winrm
+      ansible_winrm_transport: ntlm
+      ansible_winrm_port: 5986
+      ansible_winrm_server_cert_validation: ignore
   
     tasks:
     - name: Install IIS

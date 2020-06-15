@@ -4,11 +4,11 @@
     gather_facts: no
 
     vars_prompt:
-        # - name: username
-        #   prompt: "Enter local username"
-        #   private: no
-        # - name: password
-        #   prompt: "Enter password"
+        - name: username
+          prompt: "Enter local username"
+          private: no
+        - name: password
+          prompt: "Enter password"
         - name: domainname
           prompt: "Enter domain name"
     
@@ -25,11 +25,12 @@
       upstream_dns_2: 8.8.4.4
       # reverse_dns_zone: "172.16.0.0/24"
       ntp_servers: "0.us.pool.ntp.org,1.us.pool.ntp.org,2.us.pool.ntp.org,3.us.pool.ntp.org"
-      # ansible_user: "{{ username }}"
-      # ansible_password: "{{ password }}"
-      # ansible_connection: winrm
-      # ansible_winrm_transport: ntlm
-      # ansible_winrm_server_cert_validation: ignore
+      ansible_user: "{{ username }}"
+      ansible_password: "{{ password }}"
+      ansible_connection: winrm
+      ansible_winrm_transport: ntlm
+      ansible_winrm_port: 5986
+      ansible_winrm_server_cert_validation: ignore
     
     tasks:
       - name: Add host to Ansible inventory
