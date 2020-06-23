@@ -17,8 +17,8 @@
       ansible_user: "{{ username }}"
       ansible_password: "{{ password }}"
       ansible_connection: winrm
-      ansible_winrm_transport: ntlm
-      ansible_winrm_port: 5986
+      # ansible_winrm_transport: ntlm
+      ansible_winrm_port: 5985
       ansible_winrm_server_cert_validation: ignore
       
     tasks:
@@ -86,10 +86,14 @@
       - debug:
           var: user_add      
       
-      # - name: installing SSM plugin
-      #   win_shell: | 
-      #     $Url = https://s3.amazonaws.com/session-manager-downloads/plugin/latest/windows/SessionManagerPluginSetup.exe
-      #     Invoke-WebRequest $Url -Out $ENV:USERPROFILE\Desktop\SSMPluginSetup.exe
-      #     Start-Process -FilePath $ENV:USERPROFILE\Desktop\SSMPluginSetup.exe -ArgumentList "/S" -NoNewWindow -Wait
-      #     Remove-Item -Force $ENV:USERPROFILE\Desktop\SSMPluginSetup.exe
-      #     $ENV:Path += "C:\Program Files\Amazon\SessionManagerPlugin\bin\"
+      - name: installing SSM plugin
+        win_package: 
+          path: https://s3.amazonaws.com/session-manager-downloads/plugin/latest/windows/SessionManagerPluginSetup.exe
+          product_id: '{2A807C76-98F0-48F2-A763-1AB5756E479B}'
+          arguments:
+          - /S
+          - /Wait
+          - /NoNewWindow
+        register: ssm_install
+      - debug:
+          var: ssm_install
