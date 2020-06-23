@@ -33,6 +33,7 @@ win2 ansible_host=172.16.2.6
 ansible_user=Administrator
 ansible_password=SomeSecretPassword!!!
 ansible_connection=winrm
+ansible_winrm_port=5985
 ansible_winrm_server_cert_validation=ignore
 
 # Specifying connection to WinRM on 5986

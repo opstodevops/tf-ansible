@@ -32,7 +32,7 @@
             },
             "ami_name": "WIN2019-CUSTOM-{{timestamp}}",
             "instance_type": "{{user `instance_size`}}",
-            "user_data_file": "./bootstrap_win.txt",
+            "user_data_file": "./bootstrap_win_winrmsecure.txt",
             "associate_public_ip_address": true,
             "communicator": "winrm",
             "winrm_username": "{{user `winrm_username`}}",
@@ -47,25 +47,10 @@
         {
             "type": "powershell",
             "inline":[
-                "C:\\ProgramData\\Amazon\\EC2-Windows\\Launch\\Scripts\\InitializeInstance.ps1 -Schedule",
-                "C:\\ProgramData\\Amazon\\EC2-Windows\\Launch\\Scripts\\SysprepInstance.ps1 -NoShutdown"
+                "C:\\ProgramData\\Amazon\\EC2-Windows\\Launch\\Scripts\\InitializeInstance.ps1 -Schedule"
                 
             ]
-        },
-        {
-            "type": "windows-restart",
-            "restart_check_command": "powershell -command \"& {Write-Output 'restarted.'}\""
-        },
-        {
-            "type": "powershell",
-            "elevated_user": "packer",
-            "elevated_password": "{{ .WinRMPassword }}",
-            "skip_clean": true,
-            "inline":[
-                "Remove-Item -Path WSMan:\\Localhost\\listener\\listener* -Recurse",
-                "$NewCert=New-SelfSignedCertificate -CertstoreLocation Cert:\\LocalMachine\\My -DnsName $ENV:COMPUTERNAME",
-                "New-Item -Path WSMan:\\LocalHost\\Listener -Transport HTTPS -Address * -CertificateThumbPrint $NewCert.Thumbprint -Force"
-            ]
-        }    
+        }
+        
     ]
 }

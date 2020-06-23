@@ -84,4 +84,12 @@
             - Administrators
         register: user_add
       - debug:
-          var: user_add
+          var: user_add      
+      
+      # - name: installing SSM plugin
+      #   win_shell: | 
+      #     $Url = https://s3.amazonaws.com/session-manager-downloads/plugin/latest/windows/SessionManagerPluginSetup.exe
+      #     Invoke-WebRequest $Url -Out $ENV:USERPROFILE\Desktop\SSMPluginSetup.exe
+      #     Start-Process -FilePath $ENV:USERPROFILE\Desktop\SSMPluginSetup.exe -ArgumentList "/S" -NoNewWindow -Wait
+      #     Remove-Item -Force $ENV:USERPROFILE\Desktop\SSMPluginSetup.exe
+      #     $ENV:Path += "C:\Program Files\Amazon\SessionManagerPlugin\bin\"
