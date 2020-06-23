@@ -64,15 +64,21 @@
           that:
             ansible_fqdn == inventory_hostname
       
-      - name: cleaning up Temp folder
-        win_shell: |
-          $tempFiles = Test-Path -Path C:\windows\temp
-          if ($tempFiles) {
-            Remove-Item -Path C:\Windows\temp\*.ps1 -Recurse -Force
-          }
-        run_once: true
-        # become: yes
+      - name: find files with .ps1 .log and .tmp extension using powershell wildcards
+        win_find:
+          paths: C:\Windows\Temp
+          patterns: [ '*.ps1', '*.log', '*.tmp' ]
+        register: wildcard_delete_tempfolder
+      - debug:
+          var: wildcard_delete_tempfolder
 
+      - name: cleaning up Temp folder
+        win_file:
+          path: "{{ item.path }}"
+          state: absent
+        with_items: "{{ wildcard_delete_tempfolder.files }}"
+        become_user: System
+      
       # Have to keep username static to make sure Ansible is the local username
       # Look into getting an Ansible service account
       - name: adding Ansible local user

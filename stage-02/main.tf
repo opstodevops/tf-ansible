@@ -221,11 +221,6 @@ resource "aws_instance" "app01" {
   # Set Administrator password
   $admin = [adsi]("WinNT://./administrator, user")
   $admin.psbase.invoke("SetPassword", "${var.admin_password}")
-  # Install SSM Plugin
-  # Invoke-WebRequest https://s3.amazonaws.com/session-manager-downloads/plugin/latest/windows/SessionManagerPluginSetup.exe -Out $env:USERPROFILE\Desktop\SSMPluginSetup.exe
-  # Start-Process -FilePath $env:USERPROFILE\Desktop\SSMPluginSetup.exe -ArgumentList "/S" -NoNewWindow -Wait
-  # Remove-Item -Force $env:USERPROFILE\Desktop\SSMPluginSetup.exe
-  # $ENV:Path += "C:\Program Files\Amazon\SessionManagerPlugin\bin\"
 </powershell>
 EOF
 
