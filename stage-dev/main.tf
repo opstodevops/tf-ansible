@@ -38,8 +38,8 @@ provider "aws" {
   secret_key = var.aws_secret_key
   region     = var.region
   alias = "east"
-  shared_credentials_file = "~/.aws/credentials"
-  profile                 = "default"
+  # shared_credentials_file = "~/.aws/credentials"
+  # profile                 = "default"
 }
 
 ##################################################################################
@@ -229,66 +229,68 @@ resource "aws_instance" "web01" {
   }
 }
 
-# resource "aws_instance" "dc01" {
-#   ami                    = data.aws_ami.windows.id
-#   instance_type          = "t2.medium"
-#   key_name               = var.key_name
-#   vpc_security_group_ids = [aws_security_group.allow_rdp.id]
-#   iam_instance_profile   = aws_iam_instance_profile.customssmprofile.name
-#   user_data = <<EOF
-# <powershell>
-#   # Set Administrator password
-#   $admin = [adsi]("WinNT://./administrator, user")
-#   $admin.psbase.invoke("SetPassword", "${var.admin_password}")
-# </powershell>
-# EOF
+resource "aws_instance" "dc01" {
+  ami                    = data.aws_ami.windows.id
+  instance_type          = "t2.medium"
+  key_name               = var.key_name
+  vpc_security_group_ids = [aws_security_group.allow_rdp.id]
+  subnet_id = element(module.vpc.public_subnets, 1)
+  iam_instance_profile   = aws_iam_instance_profile.customssmprofile.name
+  user_data = <<EOF
+<powershell>
+  # Set Administrator password
+  $admin = [adsi]("WinNT://./administrator, user")
+  $admin.psbase.invoke("SetPassword", "${var.admin_password}")
+</powershell>
+EOF
 
-#   connection {
-#     type        = "winrm"
-#     port        = 5986
-#     https       = true
-#     insecure    = true
-#     host        = self.public_ip
-#     user        = var.admin_username
-#     password    = var.admin_password
-#     private_key = file(var.private_key_path)
-#   }
+  connection {
+    type        = "winrm"
+    port        = 5986
+    https       = true
+    insecure    = true
+    host        = self.public_ip
+    user        = var.admin_username
+    password    = var.admin_password
+    private_key = file(var.private_key_path)
+  }
 
-#   tags = {
-#     Name = "dc01"
-#   }
-# }
+  tags = {
+    Name = "dc01"
+  }
+}
 
-# resource "aws_instance" "app01" {
-#   ami                    = data.aws_ami.windows.id
-#   instance_type          = "t2.medium"
-#   key_name               = var.key_name
-#   vpc_security_group_ids = [aws_security_group.allow_rdp.id]
-#   iam_instance_profile   = aws_iam_instance_profile.customssmprofile.name
-#   user_data = <<EOF
-# <powershell>
-#   # Set Administrator password
-#   $admin = [adsi]("WinNT://./administrator, user")
-#   $admin.psbase.invoke("SetPassword", "${var.admin_password}")
-# </powershell>
-# EOF
+resource "aws_instance" "app01" {
+  ami                    = data.aws_ami.windows.id
+  instance_type          = "t2.medium"
+  key_name               = var.key_name
+  vpc_security_group_ids = [aws_security_group.allow_rdp.id]
+  subnet_id = element(module.vpc.public_subnets, 1)
+  iam_instance_profile   = aws_iam_instance_profile.customssmprofile.name
+  user_data = <<EOF
+<powershell>
+  # Set Administrator password
+  $admin = [adsi]("WinNT://./administrator, user")
+  $admin.psbase.invoke("SetPassword", "${var.admin_password}")
+</powershell>
+EOF
 
-#   connection {
-#     type        = "winrm"
-#     port        = 5986
-#     https       = true
-#     insecure    = true
-#     host        = self.public_ip
-#     user        = var.admin_username
-#     password    = var.admin_password
-#     private_key = file(var.private_key_path)
+  connection {
+    type        = "winrm"
+    port        = 5986
+    https       = true
+    insecure    = true
+    host        = self.public_ip
+    user        = var.admin_username
+    password    = var.admin_password
+    private_key = file(var.private_key_path)
 
-#   }
+  }
 
-#   tags = {
-#     Name = "app01"
-#   }
-# }
+  tags = {
+    Name = "app01"
+  }
+}
 
 resource "aws_iam_instance_profile" "customssmprofile" {
   name = "customssmprofile"
@@ -337,13 +339,13 @@ output "web01_public_ip" {
   value = aws_instance.web01.public_ip
 }
 
-# output "dc01_public_ip" {
-#   value = aws_instance.dc01.public_ip
-# }
+output "dc01_public_ip" {
+  value = aws_instance.dc01.public_ip
+}
 
-# output "app01_public_ip" {
-#   value = aws_instance.app01.public_ip
-# }
+output "app01_public_ip" {
+  value = aws_instance.app01.public_ip
+}
 
 output "ec2key_name" {
   value = aws_key_pair.ec2key.key_name
