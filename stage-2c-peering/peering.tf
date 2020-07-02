@@ -19,7 +19,7 @@ provider "aws" {
   version = "~> 2.0"
   region  = var.region
   alias   = "peer"
-  profile = "infra"
+  profile = "default" # using default profile instead of infra
   assume_role {
       role_arn = var.peer_role_arn
   }

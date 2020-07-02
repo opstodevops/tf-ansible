@@ -2,8 +2,8 @@
 # VARIABLES
 ##################################################################################
 
-variable "aws_access_key" {}
-variable "aws_secret_key" {}
+# variable "aws_access_key" {}
+# variable "aws_secret_key" {}
 variable "private_key_path" {}
 variable "key_name" {}
 variable "admin_username" {}
@@ -21,7 +21,7 @@ variable "region_2" {
 
 variable "vpc_cidr_range_east" {
   type = string
-  default = "10.0.0.0/16"
+  default = "10.10.0.0/16"
 }
 
 variable "public_subnets_east" {
@@ -31,12 +31,12 @@ variable "public_subnets_east" {
 
 variable "database_subnets_east" {
   type = list(string)
-  default = ["10.11.8.0/24", "10.11.9.0/24"]
+  default = ["10.10.8.0/24", "10.10.9.0/24"]
 }
 
 variable "vpc_cidr_range_west" {
   type = string
-  default = "10.0.0.0/16"
+  default = "10.11.0.0/16"
 }
 
 variable "public_subnets_west" {
@@ -54,26 +54,34 @@ variable "database_subnets_west" {
 ##################################################################################
 
 provider "aws" {
-  access_key = var.aws_access_key
-  secret_key = var.aws_secret_key
+  # access_key = var.aws_access_key
+  # secret_key = var.aws_secret_key
   region     = var.region_1
   alias = "east"
-  # shared_credentials_file = "~/.aws/credentials"
-  # profile                 = "default"
+  shared_credentials_file = "~/.aws/credentials"
+  profile                 = "production"
 }
 
 provider "aws" {
-  access_key = var.aws_access_key
-  secret_key = var.aws_secret_key
+  # access_key = var.aws_access_key
+  # secret_key = var.aws_secret_key
   region     = var.region_2
   alias = "west"
-  # shared_credentials_file = "~/.aws/credentials"
-  # profile                 = "default"
+  shared_credentials_file = "~/.aws/credentials"
+  profile                 = "production"
 }
 
 ##################################################################################
 # DATA SOURCES
 ##################################################################################
+
+data "aws_caller_identity" "east" {
+  provider = aws.east
+}
+
+data "aws_caller_identity" "west" {
+  provider = aws.west
+}
 
 data "aws_availability_zones" "azs_east" {
   provider = aws.east
@@ -424,10 +432,10 @@ output "vpc_id_west" {
   value = "module.vpc_west.vpc.id"
 }
 
-# output "db_subnet_group" {
-#   value = "module.vpc.database_subnet_group"
-# }
+output "db_subnet_group" {
+  value = "module.vpc.database_subnet_group"
+}
 
-# output "public_subnets" {
-#   value = "module.vpc.public_subnets"
-# }
+output "public_subnets" {
+  value = "module.vpc.public_subnets"
+}

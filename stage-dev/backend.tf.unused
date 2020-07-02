@@ -1,7 +1,0 @@
-terraform {
-    backend "s3" {
-        bucket = "bucketname"
-        key = "~/tf-ansible/stage-dev/terraform.tfstate"
-        region = "us-east-1"
-    }
-}
