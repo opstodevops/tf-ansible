@@ -10,22 +10,22 @@ variable "admin_username" {}
 variable "admin_password" {}
 
 variable "region" {
-  type = string
+  type    = string
   default = "us-east-1"
 }
 
 variable "vpc_cidr_range" {
-  type = string
+  type    = string
   default = "10.0.0.0/16"
 }
 
 variable "public_subnets" {
-  type = list(string)
+  type    = list(string)
   default = ["10.0.0.0/24", "10.0.1.0/24"]
 }
 
 variable "database_subnets" {
-  type = list(string)
+  type    = list(string)
   default = ["10.0.8.0/24", "10.0.9.0/24"]
 }
 
@@ -36,10 +36,11 @@ variable "database_subnets" {
 provider "aws" {
   # access_key = var.aws_access_key
   # secret_key = var.aws_secret_key
-  region     = var.region
-  alias = "east"
-  shared_credentials_file = "~/.aws/credentials"
+  version                 = "~>2.0"
+  region                  = var.region
+  # alias                   = "east"
   profile                 = "default"
+  shared_credentials_file = "~/.aws/credentials"
   # assume_role {
   #   role_arn = "${lookup(var.assume_roles, var.aws_account_alias)}"
   # }
@@ -49,9 +50,9 @@ provider "aws" {
 # DATA SOURCES
 ##################################################################################
 
-data "aws_caller_identity" "east" {
-  provider = aws.east
-}
+# data "aws_caller_identity" "east" {
+#   provider = aws.east
+# }
 
 data "aws_availability_zones" "azs" {}
 
@@ -135,14 +136,14 @@ data "aws_availability_zones" "azs" {}
 # }
 
 module "vpc" {
-  source = "terraform-aws-modules/vpc/aws"
+  source  = "terraform-aws-modules/vpc/aws"
   version = "2.33.0"
 
   name = "dev-vpc"
   cidr = var.vpc_cidr_range
 
   azs = slice(data.aws_availability_zones.azs.names, 0, 2) # Grabbing 2 AZs from the list of AZs
-  
+
   # Public Subnets
   public_subnets = var.public_subnets
 
@@ -154,8 +155,8 @@ module "vpc" {
 
   tags = {
     Environment = "dev"
-    Region = "east"
-    Team = "infra"
+    Region      = "east"
+    Team        = "infra"
   }
 
 }
@@ -222,7 +223,7 @@ module "vpc" {
 #   key_name               = var.key_name
 #   vpc_security_group_ids = [aws_security_group.allow_ssh.id]
 #   subnet_id = element(module.vpc.public_subnets, 0)
-  
+
 #   connection {
 #     type        = "ssh"
 #     host        = self.public_ip
