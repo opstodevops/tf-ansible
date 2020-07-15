@@ -1,8 +1,8 @@
 terraform {
   backend "s3" {
-    bucket         = "ops2dev-tfstatebucket-79483"
-    dynamodb_table = "ops2dev-tfstatelock-79483"
-    key            = "networking/dev-vpc/terraform.tfstate"
+    # bucket         = "ops2dev-tfstatelock-12493"
+    # dynamodb_table = "ops2dev-tfstatelock-12493"
+    key            = "networking/innovation-dev-vpc/terraform.tfstate"
     region         = "us-east-1"
   }
 }

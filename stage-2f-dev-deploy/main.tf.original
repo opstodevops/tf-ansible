@@ -2,59 +2,29 @@
 # VARIABLES
 ##################################################################################
 
-# variable "aws_access_key" {}
-# variable "aws_secret_key" {}
+variable "aws_access_key" {}
+variable "aws_secret_key" {}
 variable "private_key_path" {}
 variable "key_name" {}
 variable "admin_username" {}
 variable "admin_password" {}
-
 variable "region" {
-  type    = string
   default = "us-east-1"
 }
-
-# variable "vpc_cidr_range" {
-#   type    = string
-#   default = "10.0.0.0/16"
-# }
-
-# variable "public_subnets" {
-#   type    = list(string)
-#   default = ["10.0.0.0/24", "10.0.1.0/24"]
-# }
-
-# variable "database_subnets" {
-#   type    = list(string)
-#   default = ["10.0.8.0/24", "10.0.9.0/24"]
-# }
 
 ##################################################################################
 # PROVIDERS
 ##################################################################################
 
 provider "aws" {
-  # access_key = var.aws_access_key
-  # secret_key = var.aws_secret_key
-  version                 = "~>2.0"
-  region                  = var.region
-  # alias                   = "east"
-  profile                 = "default"
-  shared_credentials_file = "~/.aws/credentials"
-  # assume_role {
-  #   role_arn = "${lookup(var.assume_roles, var.aws_account_alias)}"
-  # }
+  access_key = var.aws_access_key
+  secret_key = var.aws_secret_key
+  region     = var.region
 }
 
 ##################################################################################
-# DATA SOURCES
+# DATA
 ##################################################################################
-
-# data "aws_caller_identity" "east" {
-#   provider = aws.east
-# }
-
-data "aws_availability_zones" "azs" {}
 
 data "aws_ami" "redhat-linux" {
   most_recent = true
@@ -103,35 +73,7 @@ data "aws_ami" "windows" {
 
 #This uses the default VPC.  It WILL NOT delete it on destroy.
 resource "aws_default_vpc" "default" {
-  
-  tags = {
-    Name = "default VPC for us-east-1a"
-  }
 
-}
-
-resource "aws_default_subnet" "default_az1" {
-  availability_zone = element(data.aws_availability_zones.azs.names, 0)
-
-  tags = {
-    Name = "default subnet for us-east-1a"
-  }
-}
-
-resource "aws_default_subnet" "default_az2" {
-  availability_zone = element(data.aws_availability_zones.azs.names, 1)
-
-  tags = {
-    Name = "default subnet for us-east-1b"
-  }
-}
-
-resource "aws_default_subnet" "default_az3" {
-  availability_zone = element(data.aws_availability_zones.azs.names, 2)
-
-  tags = {
-    Name = "default subnet for us-east-1c"
-  }
 }
 
 resource "tls_private_key" "tlsauth" {
@@ -162,32 +104,6 @@ resource "null_resource" "get_keys" {
   }
 
 }
-
-# module "vpc" {
-#   source  = "terraform-aws-modules/vpc/aws"
-#   version = "2.33.0"
-
-#   name = "dev-vpc"
-#   cidr = var.vpc_cidr_range
-
-#   azs = slice(data.aws_availability_zones.azs.names, 0, 2) # Grabbing 2 AZs from the list of AZs
-
-#   # Public Subnets
-#   public_subnets = var.public_subnets
-
-#   # Database Subnets
-#   database_subnets = var.database_subnets
-#   database_subnet_group_tags = {
-#     subnet_type = "database"
-#   }
-
-#   tags = {
-#     Environment = "dev"
-#     Region      = "east"
-#     Team        = "infra"
-#   }
-
-# }
 
 resource "aws_security_group" "allow_ssh" {
   name        = "tf_ssh_demo"
@@ -250,8 +166,7 @@ resource "aws_instance" "web01" {
   instance_type          = "t2.medium"
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.allow_ssh.id]
-  # subnet_id = element(module.vpc.public_subnets, 0)
-
+  
   connection {
     type        = "ssh"
     host        = self.public_ip
@@ -270,13 +185,17 @@ resource "aws_instance" "dc01" {
   instance_type          = "t2.medium"
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.allow_rdp.id]
-  # subnet_id = element(module.vpc.public_subnets, 1)
   iam_instance_profile   = aws_iam_instance_profile.customssmprofile.name
   user_data = <<EOF
 <powershell>
   # Set Administrator password
   $admin = [adsi]("WinNT://./administrator, user")
   $admin.psbase.invoke("SetPassword", "${var.admin_password}")
+  # Configure WINRM for Ansible
+  # $url = "https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1"
+  # $file = "$env:temp\ConfigureRemotingForAnsible.ps1"
+  # (New-Object -TypeName System.Net.WebClient).DownloadFile($url, $file)
+  # powershell.exe -ExecutionPolicy ByPass -File $file -Verbose
 </powershell>
 EOF
 
@@ -301,13 +220,22 @@ resource "aws_instance" "app01" {
   instance_type          = "t2.medium"
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.allow_rdp.id]
-  # subnet_id = element(module.vpc.public_subnets, 1)
   iam_instance_profile   = aws_iam_instance_profile.customssmprofile.name
   user_data = <<EOF
 <powershell>
   # Set Administrator password
   $admin = [adsi]("WinNT://./administrator, user")
   $admin.psbase.invoke("SetPassword", "${var.admin_password}")
+  # Configure WINRM for Ansible
+  # $url = "https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1"
+  # $file = "$env:temp\ConfigureRemotingForAnsible.ps1"
+  # (New-Object -TypeName System.Net.WebClient).DownloadFile($url, $file)
+  # powershell.exe -ExecutionPolicy ByPass -File $file -Verbose
+  # Install SSM Plugin
+  Invoke-WebRequest https://s3.amazonaws.com/session-manager-downloads/plugin/latest/windows/SessionManagerPluginSetup.exe -Out $env:USERPROFILE\Desktop\SSMPluginSetup.exe
+  Start-Process -FilePath $env:USERPROFILE\Desktop\SSMPluginSetup.exe -ArgumentList "/S" -NoNewWindow -Wait
+  Remove-Item -Force $env:USERPROFILE\Desktop\SSMPluginSetup.exe
+  $ENV:Path += "C:\Program Files\Amazon\SessionManagerPlugin\bin\"
 </powershell>
 EOF
 
@@ -366,6 +294,26 @@ resource "aws_iam_role_policy_attachment" "awsssmmanaged-policy-attach" {
   policy_arn = data.aws_iam_policy.awsssmmanagedinstancecore.arn
 }
 
+# resource "aws_iam_role_policy" "customssmpolicy" {
+#   name = "customssmpolicy"
+#   role = "${aws_iam_role.customssmrole.id}"
+
+#   policy = <<EOF
+# {
+#   "Version": "2012-10-17",
+#   "Statement": [
+#     {
+#       "Action": [
+#         "s3:*"
+#       ],
+#       "Effect": "Allow",
+#       "Resource": "*"
+#     }
+#   ]
+# }
+# EOF
+# }
+
 
 ##################################################################################
 # OUTPUT
@@ -386,15 +334,3 @@ output "app01_public_ip" {
 output "ec2key_name" {
   value = aws_key_pair.ec2key.key_name
 }
-
-# output "vpc_id" {
-#   value = module.vpc.vpc_id
-# }
-
-# output "db_subnet_group" {
-#   value = module.vpc.database_subnet_group
-# }
-
-# output "public_subnets" {
-#   value = module.vpc.public_subnets
-# }

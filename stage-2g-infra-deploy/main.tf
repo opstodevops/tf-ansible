@@ -25,8 +25,6 @@ variable "network_state_region" {
 }
 
 
-
-
 ##################################################################################
 # PROVIDERS
 ##################################################################################
@@ -236,7 +234,7 @@ resource "aws_autoscaling_group" "web_servers" {
 
   launch_configuration = aws_launch_configuration.web_servers.name
 
-  vpc_zone_identifier = [data.terraform_remote_state.network.outputs.public_subnets]
+  vpc_zone_identifier = data.terraform_remote_state.network.outputs.public_subnets
 
   target_group_arns = [aws_lb_target_group.web_servers.arn]
 
@@ -276,7 +274,7 @@ resource "aws_lb" "web_server" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
-  subnets            = [data.terraform_remote_state.network.outputs.public_subnets]
+  subnets            = data.terraform_remote_state.network.outputs.public_subnets
 
   enable_deletion_protection = false
 
