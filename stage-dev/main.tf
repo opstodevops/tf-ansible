@@ -245,12 +245,13 @@ resource "aws_security_group" "allow_rdp" {
   }
 }
 
-resource "aws_instance" "web01" {
+resource "aws_instance" "webservers" {
   ami                    = data.aws_ami.redhat-linux.id
   instance_type          = "t2.medium"
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.allow_ssh.id]
-  # subnet_id = element(module.vpc.public_subnets, 0)
+  subnet_id = aws_default_subnet.default_az1.id
+  count = 2
 
   connection {
     type        = "ssh"
@@ -260,17 +261,45 @@ resource "aws_instance" "web01" {
 
   }
 
+  lifecycle {
+    create_before_destroy = true
+  }
+
   tags = {
-    Name = "web01"
+    Name = "web-${count.index}"
   }
 }
+
+# resource "aws_instance" "web02" {
+#   ami                    = data.aws_ami.redhat-linux.id
+#   instance_type          = "t2.medium"
+#   key_name               = var.key_name
+#   vpc_security_group_ids = [aws_security_group.allow_ssh.id]
+#   subnet_id = aws_default_subnet.default_az3.id
+
+#   connection {
+#     type        = "ssh"
+#     host        = self.public_ip
+#     user        = "ec2-user"
+#     private_key = file(var.private_key_path)
+
+#   }
+
+#   lifecycle {
+#     create_before_destroy = true
+#   }
+
+#   tags = {
+#     Name = "web02"
+#   }
+# }
 
 resource "aws_instance" "dc01" {
   ami                    = data.aws_ami.windows.id
   instance_type          = "t2.medium"
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.allow_rdp.id]
-  # subnet_id = element(module.vpc.public_subnets, 1)
+  subnet_id = aws_default_subnet.default_az2.id
   iam_instance_profile   = aws_iam_instance_profile.customssmprofile.name
   user_data = <<EOF
 <powershell>
@@ -289,6 +318,10 @@ EOF
     user        = var.admin_username
     password    = var.admin_password
     private_key = file(var.private_key_path)
+  }
+
+  lifecycle {
+    create_before_destroy = true
   }
 
   tags = {
@@ -301,7 +334,7 @@ resource "aws_instance" "app01" {
   instance_type          = "t2.medium"
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.allow_rdp.id]
-  # subnet_id = element(module.vpc.public_subnets, 1)
+  subnet_id = aws_default_subnet.default_az3.id
   iam_instance_profile   = aws_iam_instance_profile.customssmprofile.name
   user_data = <<EOF
 <powershell>
@@ -321,6 +354,10 @@ EOF
     password    = var.admin_password
     private_key = file(var.private_key_path)
 
+  }
+
+  lifecycle {
+    create_before_destroy = true
   }
 
   tags = {
@@ -371,8 +408,16 @@ resource "aws_iam_role_policy_attachment" "awsssmmanaged-policy-attach" {
 # OUTPUT
 ##################################################################################
 
-output "web01_public_ip" {
-  value = aws_instance.web01.public_ip
+# output "web01_public_ip" {
+#   value = aws_instance.web01.public_ip
+# }
+
+# output "web02_public_ip" {
+#   value = aws_instance.web02.public_ip
+# }
+
+output "webserver_public_ip" {
+  value = aws_instance.webservers.*.public_ip
 }
 
 output "dc01_public_ip" {
