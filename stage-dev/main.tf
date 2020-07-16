@@ -107,7 +107,6 @@ resource "aws_default_vpc" "default" {
   tags = {
     Name = "default VPC for us-east-1a"
   }
-
 }
 
 resource "aws_default_subnet" "default_az1" {
@@ -115,6 +114,7 @@ resource "aws_default_subnet" "default_az1" {
 
   tags = {
     Name = "default subnet for us-east-1a"
+    Tier = "Public"
   }
 }
 
@@ -123,6 +123,7 @@ resource "aws_default_subnet" "default_az2" {
 
   tags = {
     Name = "default subnet for us-east-1b"
+    Tier = "Public"
   }
 }
 
@@ -131,6 +132,7 @@ resource "aws_default_subnet" "default_az3" {
 
   tags = {
     Name = "default subnet for us-east-1c"
+    Tier = "Public"
   }
 }
 
@@ -245,12 +247,13 @@ resource "aws_security_group" "allow_rdp" {
   }
 }
 
-resource "aws_instance" "webservers" {
+resource "aws_instance" "nix_servers" {
   ami                    = data.aws_ami.redhat-linux.id
   instance_type          = "t2.medium"
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.allow_ssh.id]
-  subnet_id = aws_default_subnet.default_az1.id
+  # subnet_id = aws_default_subnet.default_az1.id
+  subnet_id = element(list(aws_default_subnet.default_az1.id, aws_default_subnet.default_az2.id), count.index)
   count = 2
 
   connection {
@@ -416,8 +419,9 @@ resource "aws_iam_role_policy_attachment" "awsssmmanaged-policy-attach" {
 #   value = aws_instance.web02.public_ip
 # }
 
-output "webserver_public_ip" {
-  value = aws_instance.webservers.*.public_ip
+output "linux_servers_public_ip" {
+  value = aws_instance.nix_servers.*.public_ip
+  # value = [for linux in aws_instance.nix_servers : linux.public_ip]
 }
 
 output "dc01_public_ip" {
