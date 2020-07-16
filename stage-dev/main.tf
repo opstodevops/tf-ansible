@@ -142,21 +142,22 @@ resource "tls_private_key" "tlsauth" {
 }
 
 resource "aws_key_pair" "ec2key" {
-  key_name   = var.key_name
+  # key_name   = var.key_name
+  key_name   = "${var.key_name}-${terraform.workspace}"
   public_key = tls_private_key.tlsauth.public_key_openssh
   tags = {
-    Name = "ansible-key"
+    Name = "ansible-key-${terraform.workspace}"
   }
 }
 
 resource "null_resource" "get_keys" {
 
   provisioner "local-exec" {
-    command     = "echo '${tls_private_key.tlsauth.public_key_openssh}' > ./ansible-public-key.rsa"
+    command     = "echo '${tls_private_key.tlsauth.public_key_openssh}' > ./ansible-public-key-${terraform.workspace}.rsa"
   }
 
   provisioner "local-exec" {
-    command     = "echo '${tls_private_key.tlsauth.private_key_pem}' > ./ansible-key.pem"
+    command     = "echo '${tls_private_key.tlsauth.private_key_pem}' > ./ansible-key-${terraform.workspace}.pem"
   }
 
   provisioner "local-exec" {
@@ -192,7 +193,7 @@ resource "null_resource" "get_keys" {
 # }
 
 resource "aws_security_group" "allow_ssh" {
-  name        = "tf_ssh_demo"
+  name        = "tf_ssh_demo-${terraform.workspace}"
   description = "Allow ports for ssh"
   vpc_id      = aws_default_vpc.default.id
 
@@ -217,7 +218,7 @@ resource "aws_security_group" "allow_ssh" {
 }
 
 resource "aws_security_group" "allow_rdp" {
-  name        = "tf_rdp_demo"
+  name        = "tf_rdp_demo-${terraform.workspace}"
   description = "Allow ports for rdp and winrm"
   vpc_id      = aws_default_vpc.default.id
 
@@ -269,7 +270,8 @@ resource "aws_instance" "nix_servers" {
   }
 
   tags = {
-    Name = "web-${count.index}"
+    Name = "web-${count.index}-${terraform.workspace}"
+    Environment = "${terraform.workspace}"
   }
 }
 
@@ -328,7 +330,8 @@ EOF
   }
 
   tags = {
-    Name = "dc01"
+    Name = "dc01-${terraform.workspace}"
+    Environment = "${terraform.workspace}"
   }
 }
 
@@ -364,17 +367,18 @@ EOF
   }
 
   tags = {
-    Name = "app01"
+    Name = "app01-${terraform.workspace}"
+    Environment = "${terraform.workspace}"
   }
 }
 
 resource "aws_iam_instance_profile" "customssmprofile" {
-  name = "customssmprofile"
+  name = "customssmprofile-${terraform.workspace}"
   role = aws_iam_role.customssmrole.name
 }
 
 resource "aws_iam_role" "customssmrole" {
-  name = "customssmrole"
+  name = "customssmrole-${terraform.workspace}"
   path = "/"
 
   assume_role_policy = <<EOF
@@ -393,7 +397,7 @@ resource "aws_iam_role" "customssmrole" {
 }
 EOF
 tags = {
-      Environment = "dev"
+      Environment = "${terraform.workspace}"
   }
 }
 
