@@ -39,7 +39,7 @@ provider "aws" {
   version                 = "~>2.0"
   region                  = var.region
   # alias                   = "east"
-  profile                 = "default"
+  profile                 = "nonprod" # instead of default
   shared_credentials_file = "~/.aws/credentials"
   # assume_role {
   #   role_arn = "${lookup(var.assume_roles, var.aws_account_alias)}"
@@ -106,6 +106,7 @@ resource "aws_default_vpc" "default" {
   
   tags = {
     Name = "default VPC for us-east-1a"
+    Environment = "${terraform.workspace}"
   }
 }
 
@@ -114,6 +115,7 @@ resource "aws_default_subnet" "default_az1" {
 
   tags = {
     Name = "default subnet for us-east-1a"
+    Environment = "${terraform.workspace}"
     Tier = "Public"
   }
 }
@@ -123,6 +125,7 @@ resource "aws_default_subnet" "default_az2" {
 
   tags = {
     Name = "default subnet for us-east-1b"
+    Environment = "${terraform.workspace}"
     Tier = "Public"
   }
 }
@@ -132,6 +135,7 @@ resource "aws_default_subnet" "default_az3" {
 
   tags = {
     Name = "default subnet for us-east-1c"
+    Environment = "${terraform.workspace}"
     Tier = "Public"
   }
 }
@@ -161,7 +165,7 @@ resource "null_resource" "get_keys" {
   }
 
   provisioner "local-exec" {
-    command     = "chmod 600 ./ansible-key.pem"
+    command     = "chmod 600 ./ansible-key-${terraform.workspace}.pem"
   }
 
 }
@@ -251,7 +255,7 @@ resource "aws_security_group" "allow_rdp" {
 resource "aws_instance" "nix_servers" {
   ami                    = data.aws_ami.redhat-linux.id
   instance_type          = "t2.medium"
-  key_name               = var.key_name
+  key_name               = aws_key_pair.ec2key.id
   vpc_security_group_ids = [aws_security_group.allow_ssh.id]
   # subnet_id = aws_default_subnet.default_az1.id
   subnet_id = element(list(aws_default_subnet.default_az1.id, aws_default_subnet.default_az2.id), count.index)
@@ -302,7 +306,7 @@ resource "aws_instance" "nix_servers" {
 resource "aws_instance" "dc01" {
   ami                    = data.aws_ami.windows.id
   instance_type          = "t2.medium"
-  key_name               = var.key_name
+  key_name               = aws_key_pair.ec2key.id
   vpc_security_group_ids = [aws_security_group.allow_rdp.id]
   subnet_id = aws_default_subnet.default_az2.id
   iam_instance_profile   = aws_iam_instance_profile.customssmprofile.name
@@ -338,7 +342,7 @@ EOF
 resource "aws_instance" "app01" {
   ami                    = data.aws_ami.windows.id
   instance_type          = "t2.medium"
-  key_name               = var.key_name
+  key_name               = aws_key_pair.ec2key.id
   vpc_security_group_ids = [aws_security_group.allow_rdp.id]
   subnet_id = aws_default_subnet.default_az3.id
   iam_instance_profile   = aws_iam_instance_profile.customssmprofile.name

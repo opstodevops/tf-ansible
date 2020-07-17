@@ -22,47 +22,6 @@ chmod 600 YOUR_PEM.key
 exec ssh-agent bash
 ssh-add YOUR_PEM.key
 ```
-### Configure Ansible Inventory for WINRM connectivity
-```
-[win]
-win1 ansible_host=172.16.2.5 
-win2 ansible_host=172.16.2.6
-
-# Default connection to WinRM on 5985
-[win:vars]
-ansible_user=Administrator
-ansible_password=SomeSecretPassword!!!
-ansible_connection=winrm
-ansible_winrm_port=5985
-ansible_winrm_server_cert_validation=ignore
-
-# Specifying connection to WinRM on 5986
-ansible_user=Administrator
-ansible_password=SomeSecretPassword!!!
-ansible_connection=winrm
-ansible_winrm_port=5986
-ansible_winrm_server_cert_validation=ignore
-
-# Specifying connection to WinRM on 5986 & using NTLM for authentication
-ansible_user=Administrator
-ansible_password=SomeSecretPassword!!!
-ansible_connection=winrm
-ansible_winrm_port=5986
-ansible_winrm_transport=ntlm
-ansible_winrm_server_cert_validation=ignore
-```
-### Ansible PING module use for Linux and Windows
-```
-ansible LINUX -m ping -u ec2-user
-ansible WINDOWS -m win_ping -u ec2-user
-```
-### Ansible file and string encryption
-```
-ansible-vault encrypt_string --vault-password-file vault_pass.txt 'ClearTXTPassword' --name 'PASSWORD_VARIABLE'
-ansible-playbook playbook.yml --vault-password-file <vault_pass.txt>
-ansible-vault encrypt <playbook.yml>
-ansible-playbook --ask-vault-pass <playbook.yml>
-```
 ### Docker Build and RUN on Linux running in VMware Workstation
 ```
 docker build --rm --network=host -t ansible:centos .

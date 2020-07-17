@@ -36,7 +36,7 @@ variable "read_only_users" {
 provider "aws" {
   version = "~>2.0"
   region  = var.region
-  profile = "default"
+  profile = "nonprod" # instead of default
   shared_credentials_file = "~/.aws/credentials"
 }
 
