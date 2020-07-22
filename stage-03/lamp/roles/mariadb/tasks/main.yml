@@ -1,0 +1,12 @@
+---
+# tasks file for roles/mariadb
+- name: install mariadb
+  package:
+    name: mariadb-server
+    state: latest
+
+- name: start mariadb
+  systemd:
+    name: mariadb
+    enabled: true 
+    state: started

@@ -1,0 +1,6 @@
+---
+# handlers file for roles/apache
+- name: restart_web
+  systemd:
+    name: "{{ web_service}}" #from group_vars
+    state: restarted

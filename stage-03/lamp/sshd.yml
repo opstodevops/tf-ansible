@@ -1,0 +1,29 @@
+---
+- name: configuring sshd
+  hosts: all
+  gather_facts: false
+  become: yes
+  handlers:
+    - name: restart_sshd
+      systemd:
+        name: sshd.service
+        state: restarted
+  tasks:
+    - name: enable sshd
+      systemd:
+        name: sshd
+        enabled: true
+        state: started
+
+    - name: no root login #disabling root user login over sshd
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PermitRootLogin' #case sensitive
+        insertafter: '#LoginGraceTime'
+        line: 'PermitRootLogn yes' #set to no for disabling
+      notify: restart_sshd
+
+    
+
+
+    

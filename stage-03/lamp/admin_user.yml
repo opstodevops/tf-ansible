@@ -1,0 +1,15 @@
+---
+- name: create user
+  hosts: all
+  gather_facts: false
+  become: true
+  tasks:
+    - name: create user by prompt
+      user:
+        name: "{{ admin }}"
+      #   password: '$6$BQsy/HoFxDIcju2B$CLOqf8VP.ZoA0zv/UJFPTxZLA2BRpR8p1mklWZf0614uQIdQT1GlgaHM6rH4CZmTuMgLJ7deMb5YduOKfjHCR/'
+      #   update_password: on_create
+      # when: 
+      #   user_create == 'yes'
+
+    

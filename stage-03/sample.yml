@@ -1,9 +1,0 @@
----
-- name: Play 1
-  hosts: all
-  gather_facts: true
-  become: false
-  tasks:
-    - name: task 1
-      debug:
-        msg: "hello {{ ansible_fqdn }}"

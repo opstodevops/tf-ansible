@@ -34,6 +34,8 @@ override.tf.json
 # Ignore auth files
 *.pem
 *.rsa
+*.pub
+*.txt
 
 # Vault password file
 vault_pass.txt

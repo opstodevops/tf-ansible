@@ -1,0 +1,16 @@
+---
+- name: change hostname
+  hosts: all
+  become: yes
+  tasks:
+    - name: configuring httpd.conf file on CentOS
+      lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^ServerName'
+        insertafter: '^#ServerName'
+        line: "ServerName {{ ansible_fqdn }}:80"
+
+    - name: configuring MOTD
+      template:
+        src: motd.j2
+        dest: /etc/motd

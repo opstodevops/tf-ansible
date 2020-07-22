@@ -1,0 +1,15 @@
+---
+- name: Create user
+  hosts: all
+  gather_facts: false
+  become: true
+  tasks:
+    - name: include variables
+      include_vars:
+        file: private.yml
+
+    - name: create user
+      user:
+        name: "{{ user_name }}" #accepting user name as variable from command line
+        password: "{{ user_password | password_hash('sha512', 'A512') }}" #setting a variable user_password
+        update_password: on_create

@@ -1,0 +1,49 @@
+---
+# - name: ububtu
+#   hosts: ubuntu
+#   become: yes
+#   tasks:
+#     - name: install apache
+#       apt:
+#         name: apache2
+#         state: latest
+
+# - name: centos
+#   hosts: centos
+#   become: yes
+#   tasks:
+#     - name: install apache
+#       yum:
+#         name: httpd
+#         state: latest
+
+# 2nd Method
+
+# - name: install apache
+#   hosts: all
+#   tasks:
+#     - name: install apache on Ubuntu
+#       apt:
+#         name: apache2
+#         state: latest
+#       when: ansible_distribution == 'Ubuntu'
+#       become: yes
+
+#     - name: install apache on CentOS
+#       yum:
+#         name: httpd
+#         state: latest
+#       when: ansible_distribution == 'CentOS'
+#       become: yes
+
+# 3rd Method
+
+- name: install apache
+  hosts: all
+  tasks:
+    - name: install apache
+      package:
+        name: "{{ web_package }}" # from group_vars
+        state: latest
+      become: yes
+

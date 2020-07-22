@@ -1,0 +1,22 @@
+---
+- name: create devops account
+  hosts: webservers
+  become: true
+  gather_facts: false
+  tasks:
+    - name: create devops user
+      user:
+        name: devops
+    
+    - name: sudo access
+      copy:
+        dest: /etc/sudoers.d/devops
+        content: 'devops ALL=(ALL) NOPASSWD: ALL'
+        validate: /usr/sbin/visudo -cf %s # syntax check
+    
+    - name: ssh key
+      authorized_key:
+        user: devops
+        state: present
+        manage_dir: true
+        key: " {{ lookup('file', '/home/USER/.ssh/id_rsa.pub') }}" # create key beforehand

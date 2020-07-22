@@ -1,0 +1,11 @@
+---
+- name: deploy lamp
+  hosts: all
+  gather_facts: yes
+  become: yes
+  roles:
+    - apache
+    - php
+    - mariadb
+  
+  
